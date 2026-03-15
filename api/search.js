@@ -15,9 +15,11 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: '잘못된 요청입니다.' });
     }
 
-    if (!process.env.RIOT_API_KEY) {
+    const apiKey = process.env.RIOT_API_KEY;
+    if (!apiKey) {
       return res.status(500).json({ error: 'Riot API 키가 설정되지 않았습니다.' });
     }
+    console.log('RIOT_API_KEY loaded:', apiKey.substring(0, 10) + '...');
 
     const room = await getRoom(roomCode);
     if (!room) return res.status(404).json({ error: '존재하지 않는 방입니다.' });
