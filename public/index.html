@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoL 내전 밸런서</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 방 입장 화면 -->
+  <div id="room-screen" class="screen active">
+    <div class="room-container">
+      <div class="logo">
+        <div class="logo-icon">&#9876;</div>
+        <h1>LoL 내전 밸런서</h1>
+        <p class="subtitle">5v5 커스텀 게임 팀 밸런싱</p>
+      </div>
+
+      <div class="room-actions">
+        <button id="btn-create" class="btn btn-primary btn-lg">방 만들기</button>
+        <div class="divider"><span>또는</span></div>
+        <div class="join-row">
+          <input type="text" id="input-room-code" class="input" placeholder="방 코드" maxlength="4" autocomplete="off">
+          <button id="btn-join" class="btn btn-secondary">참가</button>
+        </div>
+      </div>
+
+      <p class="footer-text">같은 방 코드로 접속하면 실시간으로 같은 결과를 볼 수 있습니다</p>
+    </div>
+  </div>
+
+  <!-- 메인 화면 -->
+  <div id="main-screen" class="screen">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="logo-small">&#9876; 내전 밸런서</span>
+      </div>
+      <div class="topbar-center">
+        <span class="room-badge">방 코드: <strong id="display-room-code"></strong></span>
+        <button id="btn-copy-code" class="btn btn-tiny" title="코드 복사">복사</button>
+      </div>
+      <div class="topbar-right">
+        <span id="online-count" class="online-badge">접속 중</span>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- 입력 섹션 -->
+      <section class="section input-section">
+        <div class="section-header">
+          <h2>소환사 입력</h2>
+          <div class="input-toggle">
+            <button class="toggle-btn active" data-mode="individual">개별</button>
+            <button class="toggle-btn" data-mode="bulk">한꺼번에</button>
+            <button class="toggle-btn" data-mode="manual">수동 점수</button>
+          </div>
+        </div>
+
+        <!-- 개별 입력 -->
+        <div id="mode-individual" class="input-mode active">
+          <div class="player-inputs" id="player-inputs"></div>
+        </div>
+
+        <!-- 한꺼번에 입력 -->
+        <div id="mode-bulk" class="input-mode">
+          <textarea id="bulk-textarea" class="textarea" rows="10"
+            placeholder="소환사명#태그를 한 줄에 하나씩 입력&#10;&#10;예시:&#10;Hide on bush#KR1&#10;Faker#KR1&#10;..."></textarea>
+        </div>
+
+        <!-- 수동 점수 입력 (API 키 없이 사용) -->
+        <div id="mode-manual" class="input-mode">
+          <p class="hint">API 키 없이 직접 닉네임과 티어를 입력하세요</p>
+          <div class="manual-inputs" id="manual-inputs"></div>
+          <button id="btn-manual-apply" class="btn btn-primary btn-block">적용</button>
+        </div>
+
+        <button id="btn-search" class="btn btn-primary btn-block btn-lg" style="margin-top:12px">
+          <span class="btn-icon">&#128269;</span> Riot API 검색
+        </button>
+      </section>
+
+      <!-- 진행률 -->
+      <div id="progress-bar" class="progress-bar hidden">
+        <div class="progress-fill" id="progress-fill"></div>
+        <span class="progress-text" id="progress-text">검색 중...</span>
+      </div>
+
+      <!-- 에러 표시 -->
+      <div id="errors-box" class="errors-box hidden"></div>
+
+      <!-- 검색된 플레이어 -->
+      <section id="players-section" class="section hidden">
+        <div class="section-header">
+          <h2>검색 결과 <span class="badge" id="player-count-badge">0</span></h2>
+        </div>
+        <div id="players-grid" class="players-grid"></div>
+        <div class="balance-buttons">
+          <button id="btn-balance" class="btn btn-gold btn-lg">&#9878; 밸런스 팀 나누기</button>
+          <button id="btn-random" class="btn btn-secondary">&#127922; 랜덤 나누기</button>
+        </div>
+      </section>
+
+      <!-- 팀 결과 -->
+      <section id="teams-section" class="section hidden">
+        <div class="section-header">
+          <h2>팀 구성 결과</h2>
+          <div class="alt-controls">
+            <button id="btn-alt" class="btn btn-tiny">&#128260; 다른 조합</button>
+            <button id="btn-copy-teams" class="btn btn-tiny">&#128203; 복사</button>
+          </div>
+        </div>
+
+        <div class="teams-wrapper">
+          <div class="team-col team-blue">
+            <div class="team-header blue">
+              <span class="team-label">블루팀</span>
+              <span class="team-score" id="team1-score">0</span>
+            </div>
+            <div id="team1-list" class="team-list"></div>
+          </div>
+
+          <div class="vs-badge">VS</div>
+
+          <div class="team-col team-red">
+            <div class="team-header red">
+              <span class="team-label">레드팀</span>
+              <span class="team-score" id="team2-score">0</span>
+            </div>
+            <div id="team2-list" class="team-list"></div>
+          </div>
+        </div>
+
+        <div class="diff-info" id="diff-info"></div>
+
+        <!-- 롤링: 다음 판 -->
+        <div class="rolling-controls">
+          <button id="btn-next-round" class="btn btn-gold btn-lg">&#9654; 다음 판 (팀 섞기)</button>
+          <button id="btn-reset-rounds" class="btn btn-tiny">&#128260; 라운드 초기화</button>
+          <span class="round-info" id="round-info"></span>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
